@@ -1,10 +1,19 @@
-[tool.ruff.lint]
-select = [
-    "D",
-    "E",
-    "F",
-    "UP",
-    "B",
-    "SIM",
-    "I",
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+markers = [
+    "unit: Tests unitaires rapides",
+    "integration: Tests d'intégration avec mocks",
+    "system: Tests système de l'API",
+    "performance: Tests de performance (lents)",
 ]
+
+[tool.ruff]
+line-length = 100
+select = ["E", "F", "W", "D"]
+ignore = []
+
+[tool.ruff.pydocstyle]
+convention = "google"
