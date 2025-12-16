@@ -1,7 +1,6 @@
 """Tests unitaires pour le format binaire."""
 
 import struct
-import sys
 
 import pytest
 
@@ -53,8 +52,9 @@ class TestEncodePointSet:
         assert len(data) == 20
 
     def test_encode_valeurs_extremes(self):
-        """Valeurs limites float."""
-        points = [(sys.float_info.max, sys.float_info.min), (0.0, -0.0)]
+        """Valeurs limites float 32 bits."""
+        # Utiliser des valeurs dans la plage des float32
+        points = [(3.4e38, -3.4e38), (1.17e-38, -1.17e-38)]
         data = encode_pointset(points)
         assert len(data) == 20
 
@@ -64,12 +64,12 @@ class TestDecodePointSet:
 
     def test_decode_vide(self):
         """Ensemble vide."""
-        data = struct.pack("<I", 0)
+        data = struct.pack("<L", 0)
         assert decode_pointset(data) == []
 
     def test_decode_un_point(self):
         """Un point."""
-        data = struct.pack("<I", 1) + struct.pack("<ff", 1.5, 2.5)
+        data = struct.pack("<L", 1) + struct.pack("<ff", 1.5, 2.5)
         points = decode_pointset(data)
         assert len(points) == 1
         assert points[0][0] == pytest.approx(1.5)
@@ -78,10 +78,10 @@ class TestDecodePointSet:
     def test_decode_plusieurs_points(self):
         """Plusieurs points."""
         original = [(0.0, 0.0), (1.0, 2.0), (3.0, 4.0)]
-        data = struct.pack("<I", 3)
+        data = struct.pack("<L", 3)
         for x, y in original:
             data += struct.pack("<ff", x, y)
-        
+
         points = decode_pointset(data)
         assert len(points) == 3
 
@@ -93,7 +93,7 @@ class TestDecodePointSet:
 
     def test_decode_count_incorrect(self):
         """Nombre de points declare incorrect."""
-        data = struct.pack("<I", 5) + struct.pack("<ff", 1.0, 2.0)
+        data = struct.pack("<L", 5) + struct.pack("<ff", 1.0, 2.0)
         with pytest.raises(ValueError):
             decode_pointset(data)
 
@@ -176,12 +176,12 @@ class TestDecodeTriangles:
 
     def test_decode_valide(self):
         """Decodage valide."""
-        points_data = struct.pack("<I", 3)
+        points_data = struct.pack("<L", 3)
         points_data += struct.pack("<ff", 0.0, 0.0)
         points_data += struct.pack("<ff", 1.0, 0.0)
         points_data += struct.pack("<ff", 0.5, 1.0)
-        triangles_data = struct.pack("<I", 1) + struct.pack("<III", 0, 1, 2)
-        
+        triangles_data = struct.pack("<L", 1) + struct.pack("<LLL", 0, 1, 2)
+
         points, triangles = decode_triangles(points_data + triangles_data)
         assert len(points) == 3
         assert triangles[0] == (0, 1, 2)
@@ -193,34 +193,34 @@ class TestDecodeTriangles:
 
     def test_decode_triangles_incomplets(self):
         """Triangles incomplets."""
-        points_data = struct.pack("<I", 3)
+        points_data = struct.pack("<L", 3)
         points_data += struct.pack("<ff", 0.0, 0.0)
         points_data += struct.pack("<ff", 1.0, 0.0)
         points_data += struct.pack("<ff", 0.5, 1.0)
-        triangles_data = struct.pack("<I", 1) + struct.pack("<II", 0, 1)
-        
+        triangles_data = struct.pack("<L", 1) + struct.pack("<LL", 0, 1)
+
         with pytest.raises(ValueError):
             decode_triangles(points_data + triangles_data)
 
     def test_decode_count_triangles_faux(self):
         """Nombre de triangles incorrect."""
-        points_data = struct.pack("<I", 3)
+        points_data = struct.pack("<L", 3)
         points_data += struct.pack("<ff", 0.0, 0.0)
         points_data += struct.pack("<ff", 1.0, 0.0)
         points_data += struct.pack("<ff", 0.5, 1.0)
-        triangles_data = struct.pack("<I", 3) + struct.pack("<III", 0, 1, 2)
-        
+        triangles_data = struct.pack("<L", 3) + struct.pack("<LLL", 0, 1, 2)
+
         with pytest.raises(ValueError):
             decode_triangles(points_data + triangles_data)
 
     def test_decode_index_hors_limite(self):
         """Index de sommet hors limite."""
-        points_data = struct.pack("<I", 3)
+        points_data = struct.pack("<L", 3)
         points_data += struct.pack("<ff", 0.0, 0.0)
         points_data += struct.pack("<ff", 1.0, 0.0)
         points_data += struct.pack("<ff", 0.5, 1.0)
-        triangles_data = struct.pack("<I", 1) + struct.pack("<III", 0, 1, 10)
-        
+        triangles_data = struct.pack("<L", 1) + struct.pack("<LLL", 0, 1, 10)
+
         with pytest.raises(ValueError):
             decode_triangles(points_data + triangles_data)
 
@@ -232,7 +232,7 @@ class TestRoundtripTriangles:
         """Aller-retour un triangle."""
         points = [(0.0, 0.0), (1.0, 0.0), (0.5, 1.0)]
         triangles = [(0, 1, 2)]
-        
+
         decoded_pts, decoded_tri = decode_triangles(encode_triangles(points, triangles))
         assert len(decoded_tri) == 1
         assert decoded_tri[0] == (0, 1, 2)
@@ -240,7 +240,8 @@ class TestRoundtripTriangles:
     def test_roundtrip_plusieurs_triangles(self, sample_points_square):
         """Aller-retour plusieurs triangles."""
         triangles = [(0, 1, 2), (0, 2, 3)]
-        decoded_pts, decoded_tri = decode_triangles(encode_triangles(sample_points_square, triangles))
+        encoded = encode_triangles(sample_points_square, triangles)
+        decoded_pts, decoded_tri = decode_triangles(encoded)
         assert len(decoded_tri) == 2
 
     def test_roundtrip_zero_triangle(self):

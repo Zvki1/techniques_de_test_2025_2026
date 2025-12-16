@@ -62,20 +62,20 @@ def sample_points_10000():
 @pytest.fixture
 def empty_pointset_bytes():
     """Bytes d'un PointSet vide."""
-    return struct.pack("<I", 0)  # count = 0
+    return struct.pack("<L", 0)  # count = 0
 
 
 @pytest.fixture
 def single_point_bytes():
     """Bytes d'un PointSet avec 1 point (1.5, 2.5)."""
-    return struct.pack("<I", 1) + struct.pack("<ff", 1.5, 2.5)
+    return struct.pack("<L", 1) + struct.pack("<ff", 1.5, 2.5)
 
 
 @pytest.fixture
 def triangle_bytes():
     """Bytes d'un PointSet de 3 points formant un triangle."""
     points = [(0.0, 0.0), (1.0, 0.0), (0.5, 1.0)]
-    data = struct.pack("<I", len(points))
+    data = struct.pack("<L", len(points))
     for x, y in points:
         data += struct.pack("<ff", x, y)
     return data
@@ -114,19 +114,18 @@ def invalid_uuid():
 # =============================================================================
 
 def is_valid_triangulation(points, triangles):
-    """
-    Vérifie qu'une triangulation est valide.
-    
+    """Vérifie qu'une triangulation est valide.
+
     Args:
         points: Liste de tuples (x, y).
         triangles: Liste de tuples (i1, i2, i3).
-        
+
     Returns:
         bool: True si la triangulation est valide.
     """
     if len(points) < 3:
         return len(triangles) == 0
-    
+
     # Vérifier que tous les indices sont valides
     for tri in triangles:
         for idx in tri:
@@ -135,20 +134,19 @@ def is_valid_triangulation(points, triangles):
         # Vérifier que les 3 indices sont différents
         if len(set(tri)) != 3:
             return False
-    
+
     return True
 
 
 def generate_random_points(n, seed=42, x_range=(0, 100), y_range=(0, 100)):
-    """
-    Génère n points aléatoires de manière reproductible.
-    
+    """Génère n points aléatoires de manière reproductible.
+
     Args:
         n: Nombre de points.
         seed: Graine pour reproductibilité.
         x_range: Plage des coordonnées X.
         y_range: Plage des coordonnées Y.
-        
+
     Returns:
         list: Liste de tuples (x, y).
     """
@@ -160,34 +158,32 @@ def generate_random_points(n, seed=42, x_range=(0, 100), y_range=(0, 100)):
 
 
 def encode_pointset_manually(points):
-    """
-    Encode manuellement un PointSet (pour créer des données de test).
-    
+    """Encode manuellement un PointSet (pour créer des données de test).
+
     Args:
         points: Liste de tuples (x, y).
-        
+
     Returns:
         bytes: Représentation binaire.
     """
-    data = struct.pack("<I", len(points))
+    data = struct.pack("<L", len(points))
     for x, y in points:
         data += struct.pack("<ff", x, y)
     return data
 
 
 def encode_triangles_manually(points, triangles):
-    """
-    Encode manuellement des Triangles (pour créer des données de test).
-    
+    """Encode manuellement des Triangles (pour créer des données de test).
+
     Args:
         points: Liste de tuples (x, y).
         triangles: Liste de tuples (i1, i2, i3).
-        
+
     Returns:
         bytes: Représentation binaire.
     """
     data = encode_pointset_manually(points)
-    data += struct.pack("<I", len(triangles))
+    data += struct.pack("<L", len(triangles))
     for i1, i2, i3 in triangles:
-        data += struct.pack("<III", i1, i2, i3)
+        data += struct.pack("<LLL", i1, i2, i3)
     return data
