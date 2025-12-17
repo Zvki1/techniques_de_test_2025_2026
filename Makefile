@@ -27,6 +27,9 @@ coverage:
 # Qualité
 lint:
 	$(RUFF) check .
+lint-fix:
+	$(RUFF) check --fix .
+
 
 # Documentation
 doc:
